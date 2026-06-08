@@ -1,7 +1,7 @@
 FROM node:19.1.0-alpine3.16
 
 ARG APP_HOME=/home/node/app
-3
+
 
 
 RUN apk add --no-cache gcompat tini git python3 py3-pip bash dos2unix findutils tar curl
