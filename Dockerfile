@@ -1,53 +1,54 @@
-FROM node:lts-alpine3.23
+FROM node:19.1.0-alpine3.16
 
-# Arguments
 ARG APP_HOME=/home/node/app
 
-# Install system dependencies
-# "Don't rely on the base image for tools; if you call it, you install it." ;)
-RUN apk add --no-cache gcompat tini git git-lfs su-exec shadow dos2unix
+af
 
-# Create app directory and set ownership
+RUN apk add --no-cache gcompat tini git python3 py3-pip bash dos2unix findutils tar curl
+
+RUN pip3 install --no-cache-dir huggingface_hub
+
+ENTRYPOINT [ "tini", "--" ]
+
 WORKDIR ${APP_HOME}
-RUN chown node:node ${APP_HOME}
 
-# Set NODE_ENV to production
 ENV NODE_ENV=production
 
-# Bundle app source and set ownership
-COPY --chown=node:node . ./
+ENV USERNAME="admiin"
+ENV PASSWORD="passwoord"
 
-RUN \
-  echo "*** Install npm packages ***" && \
-  npm ci --no-audit --no-fund --loglevel=error --no-progress --omit=dev --ignore-scripts && npm cache clean --force
+RUN git clone https://github.com/shenasd/hasi.git .
 
-# Create config directory and link config.yaml. Added hardcoded dirs(constants.js?)
-# that must be present for Non-Root Mode and volumeless docker runs.
-RUN \
-  rm -f "config.yaml" || true && \
-  mkdir -p config data plugins public/scripts/extensions/third-party backups && \
-  chown -R node:node config data plugins public/scripts/extensions/third-party backups && \
-  ln -s "./config/config.yaml" "config.yaml"
+RUN echo "*** 安m包 ***" && \
+    npm install && npm cache clean --force
 
-# Pre-compile public libraries
-RUN \
-  echo "*** Run Webpack ***" && \
-  node "./docker/build-lib.js"
+COPY lauoopp.sh sydgwas.sh ./
+RUN chmod +x lauoopp.sh sydgwas.sh && \
+    dos2unix lauoopp.sh sydgwas.sh
 
-# Set the entrypoint script and cleanup
-RUN \
-  echo "*** Cleanup ***" && \
-  mv "./docker/docker-entrypoint.sh" "./" && \
-  echo "*** Make docker-entrypoint.sh executable ***" && \
-  chmod +x "./docker-entrypoint.sh" && \
-  echo "*** Convert line endings to Unix format ***" && \
-  dos2unix "./docker-entrypoint.sh" && \
-  rm -rf "./docker"
+RUN echo "*** 安装产npm包 ***" && \
+    npm i --no-audit --no-fund --loglevel=error --no-progress --omit=dev && npm cache clean --force
 
-# Fix extension repos permissions
-RUN git config --global --add safe.directory "*"
+RUN mkdir -p "config" || true && \
+    rm -f "config.yaml" || true && \
+    ln -s "./config/config.yaml" "config.yaml" || true
+
+RUN echo "*** 理 ***" && \
+    mv "./docker/docker-entrypoint.sh" "./" && \
+    rm -rf "./docker" && \
+    echo "*** 使行 ***" && \
+    chmod +x "./docker-entrypoint.sh" && \
+    echo "*** 式 ***" && \
+    dos2unix "./docker-entrypoint.sh" || true
+
+RUN sed -i 's/# Start the server/.\/lauoopp.sh/g' docker-entrypoint.sh
+
+RUN mkdir -p /tmp/sillytavern_backup && \
+    mkdir -p ${APP_HOME}/data
+
+RUN chmod -R 777 ${APP_HOME} && \
+    chmod -R 777 /tmp/sillytavern_backup
 
 EXPOSE 8000
 
-# Ensure proper handling of kernel signals
-ENTRYPOINT ["tini", "--", "./docker-entrypoint.sh"]
+CMD [ "./docker-entrypoint.sh" ] 
